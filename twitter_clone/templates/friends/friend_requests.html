@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Received Friend Requests</h5>
+            </div>
+            <div class="card-body">
+                {% for request in received_requests %}
+                <div class="d-flex align-items-center justify-content-between mb-3 p-3 border rounded">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ request.from_user.profile.profile_pic.url }}" 
+                             class="rounded-circle me-3" width="50" height="50">
+                        <div>
+                            <h6 class="mb-0">{{ request.from_user.get_full_name|default:request.from_user.username }}</h6>
+                            <small class="text-muted">@{{ request.from_user.username }}</small>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{% url 'accept_friend_request' request.id %}" 
+                           class="btn btn-success btn-sm me-2">Accept</a>
+                        <a href="{% url 'reject_friend_request' request.id %}" 
+                           class="btn btn-danger btn-sm">Reject</a>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No pending friend requests.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Sent Friend Requests</h5>
+            </div>
+            <div class="card-body">
+                {% for request in sent_requests %}
+                <div class="d-flex align-items-center justify-content-between mb-3 p-3 border rounded">
+                    <div class="d-flex align-items-center">
+                        <img src="{{ request.to_user.profile.profile_pic.url }}" 
+                             class="rounded-circle me-3" width="50" height="50">
+                        <div>
+                            <h6 class="mb-0">{{ request.to_user.get_full_name|default:request.to_user.username }}</h6>
+                            <small class="text-muted">@{{ request.to_user.username }}</small>
+                        </div>
+                    </div>
+                    <span class="badge bg-warning">Pending</span>
+                </div>
+                {% empty %}
+                <p class="text-muted">No sent friend requests.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

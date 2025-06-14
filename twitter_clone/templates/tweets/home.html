@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <!-- Tweet Form -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">What's happening?</h5>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <button type="submit" class="btn btn-primary mt-2">Tweet</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tweets -->
+        {% for tweet in tweets %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <img src="{{ tweet.author.profile.profile_pic.url }}" 
+                         class="rounded-circle me-2" width="40" height="40">
+                    <div>
+                        <strong>{{ tweet.author.get_full_name|default:tweet.author.username }}</strong>
+                        <small class="text-muted">@{{ tweet.author.username }} · {{ tweet.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+                <p class="card-text">{{ tweet.content }}</p>
+                <div class="d-flex justify-content-between">
+                    <button class="btn btn-sm btn-outline-primary like-btn" data-tweet-id="{{ tweet.id }}">
+                        <i class="fas fa-heart"></i> <span class="like-count">{{ tweet.total_likes }}</span>
+                    </button>
+                    <button class="btn btn-sm btn-outline-success retweet-btn" data-tweet-id="{{ tweet.id }}">
+                        <i class="fas fa-retweet"></i> <span class="retweet-count">{{ tweet.total_retweets }}</span>
+                    </button>
+                    <a href="{% url 'tweet_detail' tweet.id %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-comment"></i> Reply
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card">
+            <div class="card-body text-center">
+                <p>No tweets to show. Follow some friends to see their tweets!</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Your Profile</h5>
+                <div class="text-center">
+                    <img src="{{ user.profile.profile_pic.url }}" 
+                         class="rounded-circle mb-2" width="80" height="80">
+                    <h6>{{ user.get_full_name|default:user.username }}</h6>
+                    <p class="text-muted">@{{ user.username }}</p>
+                    <a href="{% url 'profile' %}" class="btn btn-sm btn-primary">View Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('.like-btn').click(function() {
+        var tweetId = $(this).data('tweet-id');
+        var button = $(this);
+        
+        $.post('{% url "like_tweet" 0 %}'.replace('0', tweetId), {
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        }, function(data) {
+            button.find('.like-count').text(data.total_likes);
+            if (data.liked) {
+                button.removeClass('btn-outline-primary').addClass('btn-primary');
+            } else {
+                button.removeClass('btn-primary').addClass('btn-outline-primary');
+            }
+        });
+    });
+
+    $('.retweet-btn').click(function() {
+        var tweetId = $(this).data('tweet-id');
+        var button = $(this);
+        
+        $.post('{% url "retweet" 0 %}'.replace('0', tweetId), {
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        }, function(data) {
+            button.find('.retweet-count').text(data.total_retweets);
+            if (data.retweeted) {
+                button.removeClass('btn-outline-success').addClass('btn-success');
+            } else {
+                button.removeClass('btn-success').addClass('btn-outline-success');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <!-- Original Tweet -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <img src="{{ tweet.author.profile.profile_pic.url }}" 
+                         class="rounded-circle me-3" width="50" height="50">
+                    <div>
+                        <h5 class="mb-0">{{ tweet.author.get_full_name|default:tweet.author.username }}</h5>
+                        <small class="text-muted">@{{ tweet.author.username }} · {{ tweet.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+                <p class="card-text fs-5">{{ tweet.content }}</p>
+                <div class="d-flex justify-content-around border-top pt-3">
+                    <button class="btn btn-outline-primary like-btn" data-tweet-id="{{ tweet.id }}">
+                        <i class="fas fa-heart"></i> <span class="like-count">{{ tweet.total_likes }}</span>
+                    </button>
+                    <button class="btn btn-outline-success retweet-btn" data-tweet-id="{{ tweet.id }}">
+                        <i class="fas fa-retweet"></i> <span class="retweet-count">{{ tweet.total_retweets }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reply Form -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Reply to this tweet</h5>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <button type="submit" class="btn btn-primary">Reply</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Replies -->
+        <h5>Replies</h5>
+        {% for reply in replies %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <img src="{{ reply.author.profile.profile_pic.url }}" 
+                         class="rounded-circle me-2" width="40" height="40">
+                    <div>
+                        <strong>{{ reply.author.get_full_name|default:reply.author.username }}</strong>
+                        <small class="text-muted">@{{ reply.author.username }} · {{ reply.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+                <p class="card-text">{{ reply.content }}</p>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card">
+            <div class="card-body text-center">
+                <p class="text-muted">No replies yet. Be the first to reply!</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('.like-btn').click(function() {
+        var tweetId = $(this).data('tweet-id');
+        var button = $(this);
+        
+        $.post('{% url "like_tweet" 0 %}'.replace('0', tweetId), {
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        }, function(data) {
+            button.find('.like-count').text(data.total_likes);
+            if (data.liked) {
+                button.removeClass('btn-outline-primary').addClass('btn-primary');
+            } else {
+                button.removeClass('btn-primary').addClass('btn-outline-primary');
+            }
+        });
+    });
+
+    $('.retweet-btn').click(function() {
+        var tweetId = $(this).data('tweet-id');
+        var button = $(this);
+        
+        $.post('{% url "retweet" 0 %}'.replace('0', tweetId), {
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        }, function(data) {
+            button.find('.retweet-count').text(data.total_retweets);
+            if (data.retweeted) {
+                button.removeClass('btn-outline-success').addClass('btn-success');
+            } else {
+                button.removeClass('btn-success').addClass('btn-outline-success');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
